@@ -28,45 +28,68 @@ namespace TDD.Tests
             httpClient = _factory.CreateClient();
         }
 
-    [Theory]
-    [InlineData("Test Name 2", "1234567891", 20, "Male", HttpStatusCode.Created)]
-    [InlineData("T", "1234567891", 20, "Male", HttpStatusCode.BadRequest)]
-    [InlineData("A very very very very very very loooooooooong name", "1234567891", 20, "Male", HttpStatusCode.BadRequest)]
-    [InlineData(null, "1234567890", 20, "Invalid Gender", HttpStatusCode.BadRequest)]
-    [InlineData("Test Name", "InvalidNumber", 20, "Male", HttpStatusCode.BadRequest)]
-    [InlineData("Test Name", "1234567890", -10, "Male", HttpStatusCode.BadRequest)]
-    [InlineData("Test Name", "1234567890", 20, "Invalid Gender", HttpStatusCode.BadRequest)]
-    [InlineData("Test Name", "12345678901234444", 20, "Invalid Gender", HttpStatusCode.BadRequest)]
-    public async Task PatientTestsAsync(String Name, String PhoneNumber, int Age, String Gender, HttpStatusCode ResponseCode)
-    {
-        var scopeFactory = _factory.Services;
-        using (var scope = scopeFactory.CreateScope())
+        [Theory]
+        [InlineData("Test Name 2", "1234567891", 20, "Male", HttpStatusCode.Created)]
+        [InlineData("T", "1234567891", 20, "Male", HttpStatusCode.BadRequest)]
+        [InlineData("A very very very very very very loooooooooong name", "1234567891", 20, "Male", HttpStatusCode.BadRequest)]
+        [InlineData(null, "1234567890", 20, "Invalid Gender", HttpStatusCode.BadRequest)]
+        [InlineData("Test Name", "InvalidNumber", 20, "Male", HttpStatusCode.BadRequest)]
+        [InlineData("Test Name", "1234567890", -10, "Male", HttpStatusCode.BadRequest)]
+        [InlineData("Test Name", "1234567890", 20, "Invalid Gender", HttpStatusCode.BadRequest)]
+        [InlineData("Test Name", "12345678901234444", 20, "Invalid Gender", HttpStatusCode.BadRequest)]
+        public async Task PatientTestsAsync(String Name, String PhoneNumber, int Age, String Gender, HttpStatusCode ResponseCode)
         {
-            var context = scope.ServiceProvider.GetService<DataContext>();
+            var scopeFactory = _factory.Services;
+            using (var scope = scopeFactory.CreateScope())
+            {
+                var context = scope.ServiceProvider.GetService<DataContext>();
 
-            // Initialize the database, so that 
-            // changes made by other tests are reset. 
+                // Initialize the database, so that 
+                // changes made by other tests are reset. 
+                await DBUtilities.InitializeDbForTestsAsync(context);
+
+                    // Arrange
+                    var request = new HttpRequestMessage(HttpMethod.Post, "api/patient")
+                    {
+                        Content = new StringContent(JsonSerializer.Serialize(new Patient
+                        {
+                            Name = Name,
+                            PhoneNumber = PhoneNumber,
+                            Age = Age,
+                            Gender = Gender
+                        }), Encoding.UTF8, "application/json")
+                    };
+
+                    // Act
+                    var response = await httpClient.SendAsync(request);
+
+                // Assert
+                var StatusCode = response.StatusCode;
+                Assert.Equal(ResponseCode, StatusCode);
+            }
+        }
+
+        [Fact]
+        public async Task PatientDublicationTestsAsync()
+        {
+            var scopeFactory = _factory.Services;
+            var scope = scopeFactory.CreateScope();
+            var context = scope.ServiceProvider.GetService<DataContext>();
             await DBUtilities.InitializeDbForTestsAsync(context);
 
-                // Arrange
-                var request = new HttpRequestMessage(HttpMethod.Post, "api/patient")
-                {
-                    Content = new StringContent(JsonSerializer.Serialize(new Patient
-                    {
-                        Name = Name,
-                        PhoneNumber = PhoneNumber,
-                        Age = Age,
-                        Gender = Gender
-                    }), Encoding.UTF8, "application/json")
-                };
+            // Arrange
+            var patient = await context.Patients.FirstOrDefaultAsync();
+            var request = new HttpRequestMessage(HttpMethod.Post, "api/patient")
+            {
+                Content = new StringContent(JsonSerializer.Serialize(patient), Encoding.UTF8, "application/json")
+            };
 
-                // Act
-                var response = await httpClient.SendAsync(request);
+            // Act
+            var Response = await httpClient.SendAsync(request);
 
             // Assert
-            var StatusCode = response.StatusCode;
-            Assert.Equal(ResponseCode, StatusCode);
+            var StatusCode = Response.StatusCode;
+            Assert.Equal(HttpStatusCode.BadRequest, StatusCode);
         }
     }
-}
 }

@@ -8,7 +8,7 @@ namespace TDD
         public DataContext(DbContextOptions options) : base(options) { }
 
         // For storing the list of patients and their state
-        public DbSet<Patient> Patient { get; set; }
+        public DbSet<Patient> Patients { get; set; }
 
         // For the storying the rooms along with their types and capacity
         public DbSet<Room> Room { get; set; }

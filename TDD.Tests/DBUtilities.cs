@@ -13,7 +13,7 @@ namespace TDD.Tests
         public static async Task InitializeDbForTestsAsync(DataContext context)
         {
             context.RoomPatient.RemoveRange(context.RoomPatient);
-            context.Patient.RemoveRange(context.Patient);
+            context.Patients.RemoveRange(context.Patients);
             context.Room.RemoveRange(context.Room);
 
             // Arrange
@@ -24,7 +24,7 @@ namespace TDD.Tests
                 Age = 20,
                 Gender = "Male"
             };
-            context.Patient.Add(Patient);
+            context.Patients.Add(Patient);
 
             var ICURoom = new Room
             {
